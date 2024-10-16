@@ -1,6 +1,6 @@
 '''
 author: zyx
-date: 2024-10-14
+date: 2024-10-11
 description: 
     Functions for processing block data
 '''
@@ -97,17 +97,46 @@ class BlockArray():
         print("Sequential processing completed.")
 
 
-    def dask_process(self):
+    def dask_process(self, result_dtype=np.uint32):
         '''
-        Convert the chunk data to the corresponding label based on the lookup table with dask parallel processing
+        Convert the chunk data to the corresponding label based on the lookup table using Dask for parallel processing
         '''
-        pass
+        # Load Zarr data using Dask
+        dask_array = da.from_zarr(self.data_path)
+        def dask_convert(pixel):
+            return self.lookup.get(pixel, 0)
+        converted_dask_array = dask_array.map_blocks(np.vectorize(dask_convert), dtype=result_dtype)
+        converted_dask_array.to_zarr(self.output_path)
+        
+        print("Dask parallel processing completed.")
+        
 
-    def parallel_process(self):
+    def parallel_process(self, result_dtype=np.uint32):
         '''
-        Convert the chunk data to the corresponding label based on the lookup table with dask parallel processing
+        Convert the chunk data to the corresponding label using parallel processing
         '''
-        pass
+        output_zarr = zarr.open(self.output_path, mode='w', shape=self.shape, chunks=self.chunk_size, dtype=result_dtype)
+        
+        def process_chunk_task(block_spec):
+            z_start, y_start, x_start = block_spec
+            z_slice = slice(z_start, min(z_start + self.chunk_size[0], self.shape[0]))
+            y_slice = slice(y_start, min(y_start + self.chunk_size[1], self.shape[1]))
+            x_slice = slice(x_start, min(x_start + self.chunk_size[2], self.shape[2]))
+
+            chunk = self.zarr_data[z_slice, y_slice, x_slice]
+            processed_chunk = self.chunk_convert(chunk, self.lookup)
+            output_zarr[z_slice, y_slice, x_slice] = processed_chunk
+            return f"Processed block: z={z_start}, y={y_start}, x={x_start}"
+
+        tasks = [(z, y, x) for z in range(0, self.shape[0], self.chunk_size[0])
+                          for y in range(0, self.shape[1], self.chunk_size[1])
+                          for x in range(0, self.shape[2], self.chunk_size[2])]
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = [executor.submit(process_chunk_task, task) for task in tasks]
+            for future in concurrent.futures.as_completed(futures):
+                print(future.result())
+
+        print("Parallel processing completed.")
 
 
 
