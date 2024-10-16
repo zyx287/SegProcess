@@ -45,9 +45,8 @@ class ProofDataset():
                     row['Zone info']
                 )
             combined_data.append(zone_data)
-        
-        combined_df = pd.DataFrame(combined_data, columns=['Redmine Number', 'Cell Name', 'Coordinate', 'Client Status', 'Zone Info'])
-        self.processed_df = combined_df
+    
+        self.processed_df = pd.DataFrame(combined_data, columns=['Redmine Number', 'Cell Name', 'Coordinate', 'Client Status', 'Zone Info'])
     
     def save_new_dataset(self):
         '''
@@ -60,38 +59,41 @@ class ProofDataset():
 
     @staticmethod
     def _map_coordinates(coord):
-        a, b, c = map(int, coord.split(','))
-        return (a, b, c)
+        return tuple(map(int, coord.split(',')))
+    
+    @staticmethod
+    def _downsampling(coord, factor):
+        return (tuple(c//factor for c in coord))
     
     def get_one_pixel_seg_id(self,
                              toml_file_path='/home/zhangy8@hhmi.org/Desktop/2024-08-20 yzhang eviepha9wuinai6EiVujor8Vee2ge8ei.auth.k.toml',
-                             lookup_path='/home/zhangy8@hhmi.org/data1/pipeline_test/Segmentation_generation/notebooks/id_to_label_202409.pkl'
+                             lookup_path='/home/zhangy8@hhmi.org/data1/pipeline_test/Segmentation_generation/notebooks/id_to_label_202409.pkl',
+                             downsampling_factors=[2, 3, 4, 5]
                              ):
         '''
         Get the segmentation id for all neurons in the list.
         '''
-        map_ids = []
-        for _, row in self.processed_df.iterrows():
-            coord_str = row['Coordinate']
-            # Generate the mapped ID for the coordinate
-            map_id = self._map_coordinates(coord_str)
-            map_ids.append(map_id)
-        target_list = []
-        for num, coor in enumerate(map_ids):
-            one_volume_array = load_knossos_dataset(toml_path=toml_file_path,
-                                                    volume_offset=coor,
-                                                    volume_size=(32, 32, 32),
-                                                    mag_size=5)  
-            target_list.append(one_volume_array[0][0][0])
-            del one_volume_array
+        self.processed_df['Mapped_Coordinates'] = self.processed_df['Coordinate'].apply(self._map_coordinates)
+        target_list = [
+            load_knossos_dataset(
+                toml_path=toml_file_path,
+                volume_offset=coord,
+                volume_size=(32, 32, 32),
+                mag_size=5
+            )[0][0][0]
+            for coord in self.processed_df['Mapped_Coordinates']
+        ]
         self.processed_df['target_id'] = target_list
+
+        if downsampling_factors:
+            for factor in downsampling_factors:
+                self.processed_df[f'Downsampled_Coordinate_{factor}'] = self.processed_df['Mapped_Coordinates'].apply(
+                    lambda coord: self._downsampling(coord, factor)
+                )
+
         with open(lookup_path, 'rb') as f:
-            data = pickle.load(f)
-        label_list = []
-        for id in target_list:
-            if id not in data.keys():
-                print(f"Segmentation id {id} not found in the lookup table.")
-            label_list.append(int(float(data[id])))
-        self.processed_df['label'] = label_list
+            lookup_data = pickle.load(f)
+        self.processed_df['label'] = self.processed_df['target_id'].apply(
+            lambda seg_id: int(float(lookup_data.get(seg_id, 'Segmentation id not found')))
+        )
         print("Segmentation id and label generated for all neurons.")
-        
