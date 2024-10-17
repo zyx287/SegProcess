@@ -10,12 +10,7 @@ import datetime
 import pandas as pd
 import pickle
 import numpy as np
-from segprocess.knossos_utils_plugin import (
-    load_knossos_dataset,
-    generate_segmentation,
-    seg_to_tif,
-    launch_kimimaro
-)
+from segprocess.knossos_utils_plugin import load_knossos_dataset
 from segprocess.graph_reader import SegGraph
 
 
