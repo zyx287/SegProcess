@@ -97,7 +97,7 @@ class BlockArray():
         print("Sequential processing completed.")
 
 
-    def dask_process(self, result_dtype=np.uint32):
+   def dask_process(self, result_dtype=np.uint32):
         '''
         Convert the chunk data to the corresponding label based on the lookup table using Dask for parallel processing
         '''

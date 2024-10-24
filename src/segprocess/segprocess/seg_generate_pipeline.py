@@ -8,13 +8,13 @@ description:
 # main_pipeline.py
 
 import os
-from knossos_utils_plugin import (
+from segprocess.segprocess.knossos_utils_plugin import (
     load_knossos_dataset,
     generate_segmentation,
     seg_to_tif,
     launch_kimimaro
 )
-from graph_reader import SegGraph
+from segprocess.segprocess.graph_reader import SegGraph
 
 import pandas as pd
 import numpy as np

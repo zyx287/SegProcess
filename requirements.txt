@@ -1,3 +1,5 @@
 zarr==2.18.3
-grapg-tool==2.77
-knossos_utils==0.1
+graph-tool
+knossos_utils
+pandas
+tifffile
