@@ -124,6 +124,5 @@ class ProofDataset():
     def get_downsampling_seg_id(self, downsampling_factors=[2, 3, 4, 5]):
         for factor in downsampling_factors:
             self.processed_df[f'Downsampled_Coordinate_{factor}'] = self.processed_df['Mapped_Coordinates'].apply(
-                lambda coord: self._downsampling(coord, factor)
-            )
+                lambda coord: self._downsampling(coord, factor))
         print("Downsampled coordinates generated for all neurons.")
