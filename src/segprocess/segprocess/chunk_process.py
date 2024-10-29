@@ -66,7 +66,7 @@ class BlockArray():
         '''
         Process chunk data, convert each pixel segnemtation id to the corresponding label
         '''
-        converter = np.vectorize(lambda pixel: lookup.get(pixel, 0))
+        converter = np.vectorize(lambda pixel: lookup.get(pixel, 0), otypes=[np.uint32])
         
         return converter(chunk)
     
