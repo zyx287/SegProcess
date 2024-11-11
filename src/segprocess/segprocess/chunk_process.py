@@ -23,6 +23,13 @@ def dask_read_npy(fp, chunks=None, mmap_mode='r'):
     dask_arr = dda.empty_like(np_mmap, chunks=chunks)
     return dask_arr.map_blocks(load_npy_chunk, fp=fp, mmap_mode=mmap_mode, meta=dask_arr)
 
+def generate_zarr_from_npy(npy_file, zarr_output_path, chunk_size=(64, 64, 64)):
+    #TODO
+    pass
+
+def zarr_transpose():
+    #TODO
+    pass
 
 
 
