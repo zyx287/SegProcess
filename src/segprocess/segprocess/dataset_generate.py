@@ -28,12 +28,12 @@ class ProofDataset():
     def __init__(self, excel_path='/Users/zyx/Desktop/000LiLab/ariadne proofread track/20240929/EmeraldProofreading_external_20240929.xlsx'):
         self.excel_path = excel_path
 
-    def filter_excel_client(self):
+    def filter_excel_client(self, sheets=['zone 1', 'zone 2', 'zone 3']):
         '''
         Read and select the cells after proofreading and marked as 'complete'.
         '''
         file_path = self.excel_path
-        sheets = ['zone 1', 'zone 2', 'zone 3']
+        self.sheets = sheets
         combined_data = []
 
         for sheet in sheets:
