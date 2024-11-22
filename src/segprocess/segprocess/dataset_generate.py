@@ -58,7 +58,7 @@ class ProofDataset():
         Read and select the cells after proofreading and marked as 'QA is complete'.
         '''
         file_path = self.excel_path
-        sheets = ['zone 1', 'zone 2', 'zone 3']
+        sheets = self.sheets
         combined_data = []
 
         for sheet in sheets:
