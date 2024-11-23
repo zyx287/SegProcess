@@ -7,6 +7,7 @@ description:
 
 import os
 import datetime
+import re
 import pandas as pd
 import pickle
 import numpy as np
@@ -14,6 +15,7 @@ import zarr
 import dask
 import dask.array as da
 from dask import delayed
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from segprocess.segprocess.knossos_utils_plugin import (
     load_knossos_dataset,
     generate_segmentation,
@@ -53,12 +55,12 @@ class ProofDataset():
         combined_df = pd.DataFrame(combined_data, columns=['Redmine Number', 'Cell Name', 'Coordinate', 'Client Status', 'Zone Info'])
         self.processed_df = combined_df
 
-    def filter_excel_ariadne(self):
+    def filter_excel_ariadne(self, sheets=['zone 1', 'zone 2', 'zone 3']):
         '''
         Read and select the cells after proofreading and marked as 'QA is complete'.
         '''
         file_path = self.excel_path
-        sheets = self.sheets
+        self.sheets = sheets
         combined_data = []
 
         for sheet in sheets:
@@ -93,13 +95,22 @@ class ProofDataset():
 
     @staticmethod
     def _map_coordinates(coord):
-        return tuple(map(int, coord.split(',')))
+        if not isinstance(coord, str):
+            print(f"Invalid type: {coord} (expected string)")
+        coord = re.sub(r"[^\d,\s]+$", "", coord).strip()
+        parts = coord.split(',')
+        if len(parts) != 3:
+            raise (f"Invalid coordinate: {coord}, xyz should be numeric values")
+        try:
+            mapped_coord = tuple(map(int, parts))
+        except ValueError as e:
+            raise (f"Invalid coordinate: {coord}, with error {e}")
+        return mapped_coord
     
     @staticmethod
     def _downsampling(coord, factor):
         return (tuple(c//factor for c in coord))
 
-    
     def get_one_pixel_seg_id(self,
                              toml_file_path='/home/zhangy8@hhmi.org/Desktop/2024-08-20 yzhang eviepha9wuinai6EiVujor8Vee2ge8ei.auth.k.toml',
                              lookup_path='/home/zhangy8@hhmi.org/data1/pipeline_test/Segmentation_generation/notebooks/id_to_label_202409.pkl'
@@ -117,6 +128,45 @@ class ProofDataset():
             )[0][0][0]
             for coord in self.processed_df['Mapped_Coordinates']
         ]
+        self.processed_df['target_id'] = target_list
+
+        with open(lookup_path, 'rb') as f:
+            lookup_data = pickle.load(f)
+        self.processed_df['label'] = self.processed_df['target_id'].apply(
+            lambda seg_id: int(float(lookup_data.get(seg_id, 'Segmentation id not found')))
+        )
+        print("Segmentation id and label generated for all neurons.")
+
+    def get_one_pixel_seg_id_multithreads(self,
+                             toml_file_path='/home/zhangy8@hhmi.org/Desktop/2024-08-20 yzhang eviepha9wuinai6EiVujor8Vee2ge8ei.auth.k.toml',
+                             lookup_path='/home/zhangy8@hhmi.org/data1/pipeline_test/Segmentation_generation/notebooks/id_to_label_202409.pkl',
+                             num_threads=10
+                             ):
+        '''
+        Get the segmentation id for all neurons in the list.
+        '''
+        self.processed_df['Mapped_Coordinates'] = self.processed_df['Coordinate'].apply(self._map_coordinates)
+
+        def process_coordinate(coord):
+            return load_knossos_dataset(
+                toml_path=toml_file_path,
+                volume_offset=coord,
+                volume_size=(32, 32, 32),
+                mag_size=5
+            )[0][0][0]
+        
+        coords = self.processed_df['Mapped_Coordinates'].dropna().tolist()
+        target_list = []
+        
+        with ThreadPoolExecutor(max_workers=num_threads) as executor:
+            futures = {executor.submit(process_coordinate, coord): coord for coord in coords}
+            for future in as_completed(futures):
+                try:
+                    target_list.append(future.result())
+                except Exception as e:
+                    print(f"Error processing coordinate: {futures[future]}, error: {e}")
+                    target_list.append(None)
+
         self.processed_df['target_id'] = target_list
 
         with open(lookup_path, 'rb') as f:
