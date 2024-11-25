@@ -78,7 +78,7 @@ class SegGraph():
         )
 
         # Apply changes to the base graph
-        operation_num = 0
+        # operation_num = 0
         for index, row in changes.iterrows():
             operation = row['operation']
             seg_id_1 = row['vertex1']
@@ -89,12 +89,12 @@ class SegGraph():
                 vertex2 = self.seg_id_to_vertex[seg_id_2]
                 if operation == '+':
                     self.base_graph.add_edge(vertex1, vertex2)
-                    operation_num += 1
+                    # operation_num += 1
                 elif operation == '-':
                     edge = self.base_graph.edge(vertex1, vertex2)
                     if edge is not None:
                         self.base_graph.remove_edge(edge)
-                    operation_num += 1
+                    # operation_num += 1
             else:
                 raise ValueError(f"Changes {index} error! Segmentation id {seg_id_1} or {seg_id_2} not found in the base graph")
     
@@ -102,12 +102,10 @@ class SegGraph():
         '''
         Extract all connected components of the given supervoxel from the base graph (Works for generating merge list of a specific neuron)
         '''
-        if start_vertex_supervoxel_id in self.seg_id_to_vertex:
-            start_vertex = self.seg_id_to_vertex[start_vertex_supervoxel_id]
-            print(f"seg_id {start_vertex_supervoxel_id}: {int(start_vertex)}")
-        else:
+        if start_vertex_supervoxel_id not in self.seg_id_to_vertex:
             raise ValueError(f"Supervoxel {start_vertex_supervoxel_id} not found in the base graph")
-
+        start_vertex = self.seg_id_to_vertex[start_vertex_supervoxel_id]
+        print(f"seg_id {start_vertex_supervoxel_id}: {int(start_vertex)}")
         visited_vertices_segid = set()
         for edge in gt.dfs_iterator(self.base_graph, start_vertex):
             source_vertex = int(edge.source())
