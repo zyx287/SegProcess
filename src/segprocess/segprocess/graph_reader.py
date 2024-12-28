@@ -70,33 +70,48 @@ class SegGraph():
 
     def update_graph_changes(self, change_log_path: str):
         '''
-        Update the graph according to the change log
+        Update the graph according to the change log.
+        Lines with invalid operations are printed and skipped.
         '''
-        changes = pd.read_csv(change_log_path, sep='\t',
-                              header=None,
-                              names=['operation', 'vertex1', 'vertex2']
+        import pandas as pd
+
+        # Read the entire file into a DataFrame
+        changes = pd.read_csv(
+            change_log_path,
+            sep='\t',
+            header=None,
+            names=['operation', 'vertex1', 'vertex2'],
+            dtype={'operation': str, 'vertex1': 'Int64', 'vertex2': 'Int64'}
         )
 
         # Apply changes to the base graph
-        # operation_num = 0
+        operation_num = 0
         for index, row in changes.iterrows():
             operation = row['operation']
             seg_id_1 = row['vertex1']
             seg_id_2 = row['vertex2']
-            
+
+            # Check if the operation is valid
+            if operation not in ['+', '-']:
+                print(f"Ignored line {index + 1}: Invalid operation '{operation}'")
+                continue
+
             if seg_id_1 in self.seg_id_to_vertex and seg_id_2 in self.seg_id_to_vertex:
                 vertex1 = self.seg_id_to_vertex[seg_id_1]
                 vertex2 = self.seg_id_to_vertex[seg_id_2]
                 if operation == '+':
                     self.base_graph.add_edge(vertex1, vertex2)
-                    # operation_num += 1
+                    operation_num += 1
                 elif operation == '-':
                     edge = self.base_graph.edge(vertex1, vertex2)
                     if edge is not None:
                         self.base_graph.remove_edge(edge)
-                    # operation_num += 1
+                    operation_num += 1
             else:
-                raise ValueError(f"Changes {index} error! Segmentation id {seg_id_1} or {seg_id_2} not found in the base graph")
+                raise ValueError(f"Change {index + 1} error! Segmentation id {seg_id_1} or {seg_id_2} not found in the base graph")
+
+        # Print the number of operations applied
+        print(f"Applied {operation_num} operations to the base graph.")
     
     def extract_connected_components(self, start_vertex_supervoxel_id: int)-> int:
         '''

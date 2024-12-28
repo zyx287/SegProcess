@@ -8,3 +8,4 @@
 ## [0.1.2] - 2024-12-09
 ### Added
 - Multi-threads processing of dense labeled segmentation chunks
+  Add file content check in changes.tsv [2024-12-28]
