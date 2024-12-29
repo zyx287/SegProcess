@@ -150,7 +150,7 @@ class SegGraph():
             return 0
         ## Simple transform the data:
         label_to_new_label = {}
-        start_number = 9 * (10 ** (int(len(str(len(hist))))))
+        start_number = 9 * (10 ** (int(len(str(len(hist))))))# 9 is the represent the cell shape
         for label in range(len(hist)):
             label_to_new_label[label] = start_number + label
         supervoxel_to_new_label = {}
@@ -166,7 +166,7 @@ class SegGraph():
     
     def save_graph(self, output_file_path: str):
         '''
-        Save the graph to the output path
+        Save the graph with proofread (updated with changes in changes.tsv) to the output path
         '''
         self.base_graph.save(output_file_path)
         folder_path = os.path.dirname(output_file_path)

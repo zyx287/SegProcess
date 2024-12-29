@@ -8,4 +8,10 @@
 ## [0.1.2] - 2024-12-09
 ### Added
 - Multi-threads processing of dense labeled segmentation chunks
-  Add file content check in changes.tsv [2024-12-28]
+
+## [0.2.0] - Building
+### Fixed
+  Add file content check in changes.tsv
+### Added
+  Dask processing of 3D volume (id to label) using multi-threading
+  Read and write zarr data from npy segmentation

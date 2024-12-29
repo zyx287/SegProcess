@@ -3,3 +3,4 @@ graph-tool
 knossos_utils
 pandas
 tifffile
+dask[distributed]
