@@ -25,6 +25,25 @@ def id_to_label(data_chunk, lookup):
     print("Finished processing chunk.")
     return result
 
+def filter_labels(data_array, labels):
+    '''
+    Filter out labels from a dense labeled segmentation data
+    Parms:
+        data_array: np.ndarray
+            The dense labeled segmentation data
+        labels: array
+            The labels to keep
+    Returns:
+        np.ndarray
+            The filtered dense labeled segmentation data
+    '''
+    data_array = np.where(data_array == None, 0, data_array)
+    vaild_labels_set = set(labels.flatten())
+    def _filter_labels(x):
+        return x if x in vaild_labels_set else 0
+    vectorized_filter_labels = np.vectorize(_filter_labels)
+    return vectorized_filter_labels(data_array)
+
 def process_volume_dask(data, lookup, chunk_size=(100, 100, 100), mode="threads", n_cpus=4):
     '''
     Process a large 3D volume using a lookup table with Dask, including chunk tracking and execution mode selection.
