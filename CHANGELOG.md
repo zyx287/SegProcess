@@ -14,4 +14,5 @@
   Add file content check in changes.tsv
 ### Added
   Dask processing of 3D volume (id to label) using multi-threading
-  Read and write zarr data from npy segmentation
+  Read and write zarr data from npy segmentation (relative slow)
+  Multi-process computation for convert and filter zarr segmentation (Low memory required)
