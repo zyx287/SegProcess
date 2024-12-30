@@ -9,7 +9,7 @@
 ### Added
 - Multi-threads processing of dense labeled segmentation chunks
 
-## [0.2.0] - Building
+## [0.2.0] - 2024-12-29
 ### Fixed
   Add file content check in changes.tsv
 ### Added
