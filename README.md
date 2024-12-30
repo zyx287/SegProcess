@@ -76,6 +76,15 @@ look_up_table = ariadne_graph.get_supervoxel_to_label
 
 #### 6. Generate Neuroglancer precomputed data using igneous
 
+### Process Zarr dataset
+In src/segprocess/scripts/parallel.py, we provide a pipeline based on multi-process to process large volume array.
+
+After get the id_to_label look up table and the proofread cells' label, execute:
+```bash
+python parallel.py > output.log &
+```
+We tested the function on Linux Workstation, processed a 600 GB segmentation.
+
 <!-- ## Notebook Details
 The included Jupyter Notebook provides a step-by-step guide for:
 1. Loading and filtering Ariadne proofreading data.
