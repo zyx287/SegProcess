@@ -10,6 +10,9 @@ import zarr
 import numpy as np
 from multiprocessing import Process, JoinableQueue, cpu_count
 from knossos_utils import KnossosDataset
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 def compute_slices(total_volume_size, chunk_size):
     '''
@@ -39,6 +42,41 @@ def compute_slices(total_volume_size, chunk_size):
         slices_list.append(slices)
     return slices_list
 
+def create_retry_session(retries=5, backoff_factor=0.5):
+    """
+    Create a requests session with retry logic.
+    Parms:
+        retries: int
+            Number of retry attempts.
+        backoff_factor: float
+            Backoff factor for retries.
+    Returns:
+        requests.Session
+            A requests session with retry logic.
+    """
+    session = requests.Session()
+    retry = Retry(
+        total=retries,
+        read=retries,
+        connect=retries,
+        backoff_factor=backoff_factor,
+        status_forcelist=[500, 502, 503, 504],
+    )
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount("https://", adapter)
+    session.mount("http://", adapter)
+    return session
+
+def chunk_already_processed(output_zarr, downsampled_slices):
+    """
+    Check if a chunk has already been processed in the Zarr dataset, used for restarting.
+    """
+    try:
+        data = output_zarr[tuple(downsampled_slices)]
+        return np.any(data)
+    except KeyError:
+        return False
+
 def load_and_write_chunk(slices, toml_path, output_zarr_path, mag_size, downsampled_size):
     '''
     Load segmentation data for a specific slice and write to Zarr.
@@ -60,11 +98,22 @@ def load_and_write_chunk(slices, toml_path, output_zarr_path, mag_size, downsamp
     volume_size = [s.stop - s.start for s in slices]
     print(volume_offset, volume_size)
 
+    if chunk_already_processed(output_zarr, downsampled_slices):
+        print(f"Skipping already processed chunk: {downsampled_slices}")
+        return
+
     kdataset = KnossosDataset()
     kdataset.initialize_from_conf(toml_path)
-    chunk_data = kdataset.load_seg(offset=tuple(volume_offset), size=tuple(volume_size), mag=mag_size)
 
-    # Convert chunk_data from ZYX to XYZ order
+    # Avoid ariadne timeout
+    session = create_retry_session()
+    try:
+        chunk_data = kdataset.load_seg(offset=tuple(volume_offset), size=tuple(volume_size), mag=mag_size)
+    except requests.exceptions.RequestException as e:
+        print(f"Failed to load segment: {e}")
+        raise
+
+    # Convert chunk_data from ZYX to XYZ order :( really weird logic for knossos_utils
     chunk_data = np.transpose(chunk_data, (2, 1, 0))
 
     downsampled_slices = [
@@ -93,11 +142,14 @@ def worker(task_queue, toml_path, output_zarr_path, mag_size, downsampled_size):
         downsampled_size: tuple
             Downsampled size of the dataset.
     """
-    while True:
+   while True:
         slices = task_queue.get()
         if slices is None:
             break
-        load_and_write_chunk(slices, toml_path, output_zarr_path, mag_size, downsampled_size)
+        try:
+            load_and_write_chunk(slices, toml_path, output_zarr_path, mag_size, downsampled_size)
+        except Exception as e:
+            print(f"Error processing chunk {slices}: {e}")
         task_queue.task_done()
 
 def process_volume_with_precomputed_slices(toml_path, output_zarr_path, total_volume_size, chunk_size, mag_size, num_workers=None):
