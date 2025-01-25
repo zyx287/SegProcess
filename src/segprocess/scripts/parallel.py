@@ -1,3 +1,10 @@
+'''
+author: zyx
+date: 2025-01-04
+last_modified: 2025-01-24
+description: 
+    Process the cell segmentation based on look-up table
+'''
 import zarr
 import numpy as np
 from multiprocessing import Process, JoinableQueue, cpu_count

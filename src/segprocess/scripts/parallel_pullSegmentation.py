@@ -1,0 +1,164 @@
+'''
+author: zyx
+date: 2025-01-24
+last_modified: 2025-01-24
+description: 
+    Pull segmentation from the ariadne dataset
+'''
+# TODO: Update the code
+import zarr
+import numpy as np
+from multiprocessing import Process, JoinableQueue, cpu_count
+from knossos_utils import KnossosDataset
+
+def compute_slices(total_volume_size, chunk_size):
+    '''
+    Precompute slices for all chunks in the volume.
+
+    Parms:
+        total_volume_size: tuple
+            The total size of the volume (x, y, z).
+        chunk_size: tuple
+            The size of each chunk (x, y, z).
+
+    Returns:
+        list of tuple
+            A list of slices for each chunk.
+    '''
+    slices_list = []
+    for chunk_indices in np.ndindex(*[int(np.ceil(total_volume_size[dim] / chunk_size[dim])) for dim in range(len(total_volume_size))]):
+        volume_offset = [idx * chunk_size[dim] for dim, idx in enumerate(chunk_indices)]
+        volume_size = [
+            min(chunk_size[dim], total_volume_size[dim] - volume_offset[dim])  # Handle boundary cases
+            for dim in range(len(chunk_size))
+        ]
+        slices = [
+            slice(volume_offset[dim], volume_offset[dim] + volume_size[dim])
+            for dim in range(len(volume_offset))
+        ]
+        slices_list.append(slices)
+    return slices_list
+
+def load_and_write_chunk(slices, toml_path, output_zarr_path, mag_size, downsampled_size):
+    '''
+    Load segmentation data for a specific slice and write to Zarr.
+
+    Parms:
+        slices: list of slice
+            Precomputed slices defining the chunk.
+        toml_path: str
+            Path to the TOML file for configuration.
+        output_zarr_path: str
+            Path to the output Zarr dataset.
+        mag_size: int
+            Magnification level for segmentation.
+        downsampled_size: tuple
+            Downsampled size of the dataset.
+    '''
+    # Compute the offset and size from the slices
+    volume_offset = [s.start for s in slices]
+    volume_size = [s.stop - s.start for s in slices]
+    print(volume_offset, volume_size)
+
+    kdataset = KnossosDataset()
+    kdataset.initialize_from_conf(toml_path)
+    chunk_data = kdataset.load_seg(offset=tuple(volume_offset), size=tuple(volume_size), mag=mag_size)
+
+    # Convert chunk_data from ZYX to XYZ order
+    chunk_data = np.transpose(chunk_data, (2, 1, 0))
+
+    downsampled_slices = [
+        slice(s.start // mag_size, s.stop // mag_size)
+        for s in slices
+    ]
+
+    output_zarr = zarr.open(output_zarr_path, mode="a")
+
+    output_zarr[tuple(downsampled_slices)] = chunk_data
+    print(f"Processed chunk with offset {volume_offset} and size {volume_size}, written to {downsampled_slices}")
+
+def worker(task_queue, toml_path, output_zarr_path, mag_size, downsampled_size):
+    """
+    Worker function to process tasks from the queue.
+
+    Parms:
+        task_queue: JoinableQueue
+            Queue containing tasks to process.
+        toml_path: str
+            Path to the TOML file for configuration.
+        output_zarr_path: str
+            Path to the output Zarr dataset.
+        mag_size: int
+            Magnification level for segmentation.
+        downsampled_size: tuple
+            Downsampled size of the dataset.
+    """
+    while True:
+        slices = task_queue.get()
+        if slices is None:
+            break
+        load_and_write_chunk(slices, toml_path, output_zarr_path, mag_size, downsampled_size)
+        task_queue.task_done()
+
+def process_volume_with_precomputed_slices(toml_path, output_zarr_path, total_volume_size, chunk_size, mag_size, num_workers=None):
+    """
+    Process a large volume with precomputed slices and multiprocessing.
+
+    Parms:
+        toml_path: str
+            Path to the TOML file for configuration.
+        output_zarr_path: str
+            Path to the output Zarr dataset.
+        total_volume_size: tuple
+            The total size of the volume (x, y, z).
+        chunk_size: tuple
+            The size of each chunk (x, y, z).
+        mag_size: int
+            Magnification level for segmentation.
+        num_workers: int, optional
+            Number of worker processes to use. Defaults to CPU count.
+    """
+    downsampled_size = tuple(d // mag_size for d in total_volume_size)
+    downsampled_chunk_size = tuple(d // mag_size for d in chunk_size)
+    print(f"Downsampled size: {downsampled_size}, Chunk size: {downsampled_chunk_size}")
+    zarr.open(output_zarr_path, mode="w", shape=downsampled_size, chunks=downsampled_chunk_size, dtype="uint32")
+
+    # Precompute slices
+    slices_list = compute_slices(total_volume_size, chunk_size)
+    print(slices_list)
+
+    task_queue = JoinableQueue()
+    for slices in slices_list:
+        task_queue.put(slices)
+
+    num_workers = num_workers or cpu_count()
+    workers = []
+    for _ in range(num_workers):
+        worker_process = Process(target=worker, args=(task_queue, toml_path, output_zarr_path, mag_size, downsampled_size))
+        worker_process.start()
+        workers.append(worker_process)
+
+    task_queue.join()
+
+    for _ in range(num_workers):
+        task_queue.put(None)
+    for worker_process in workers:
+        worker_process.join()
+
+    print("Processing completed.")
+
+if __name__ == "__main__":
+    toml_path = '/home/zhangy8@hhmi.org/Desktop/2024-08-20 yzhang eviepha9wuinai6EiVujor8Vee2ge8ei.auth.k.toml'
+    output_zarr_path = "/media/zhangy8/2e9acc20-4fb5-4d17-9e23-9f2ed36f8bf2/SegmentaionData/source/segmentation_data_mag2_20250124.zarr"
+    total_volume_size = (27491, 15255, 12548)
+    chunk_size = (2048, 2048, 2048)  # Adjust based on memory limit
+    mag_size = 2
+
+    process_volume_with_precomputed_slices(
+        toml_path=toml_path,
+        output_zarr_path=output_zarr_path,
+        total_volume_size=total_volume_size,
+        chunk_size=chunk_size,
+        mag_size=mag_size,
+        num_workers=10  # Adjust based on system
+    )

@@ -1,6 +1,7 @@
 '''
 author: zyx
 date: 2024-09-11
+last_modified: 2025-01-24
 description: 
     scripts for processing ariadne.ai data
     - Generate segmentation based on Knossos_utils and mergelist (exported from KNOSSOS)
@@ -21,6 +22,9 @@ def load_knossos_dataset(toml_path: str = "./toml-file/2024-08-20 yzhang eviepha
     '''
     Follow instructions from ariadne.ai
     Loading toml -> load_seg
+    Parms:
+        volume_offset and volume_size is at the original scale;
+        mag_size is the magnification level, for cell segmentation, the result resolution is 2^(mag_size-1) * 8nm
     '''
     kdataset = KnossosDataset()
     kdataset.initialize_from_conf(toml_path)
@@ -29,7 +33,7 @@ def load_knossos_dataset(toml_path: str = "./toml-file/2024-08-20 yzhang eviepha
 
 def generate_segmentation(segmented_volume: np.ndarray, mergelist_path: str = 'mergelist.txt'):
     '''
-    Generate segmentation based on Knossos_utils and mergelist (exported from KNOSSOS)
+    Generate segmentation mask based on Knossos_utils and mergelist for specific cell(exported from KNOSSOS)
     '''
     with open(mergelist_path, 'r') as file:
         file_contents = file.read()
@@ -41,14 +45,14 @@ def generate_segmentation(segmented_volume: np.ndarray, mergelist_path: str = 'm
 
 def seg_to_tif(segmentation: np.ndarray, save_path: str = './segmentation.tif'):
     '''
-    Save segmentation to tif file
+    Save segmentation mask to tif file
     '''
     segmentation_tif = (segmentation * 255).astype(np.uint8)
     tiff.imwrite(save_path, segmentation_tif)
 
 def seg_to_npy(segmentation: np.ndarray, save_path: str = './segmentation.npy'):
     '''
-    Save segmentation to tif file
+    Save segmentation mask to tif file
     '''
     np.save(save_path, segmentation)
 
@@ -72,3 +76,5 @@ def launch_kimimaro(file_path: str, env_name: str = 'kimimaro_env')-> int:
     os.system(kimimaro_commend)
     
     return 0
+
+###### Pull segmentation from ariadne
