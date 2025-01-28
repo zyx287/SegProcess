@@ -6,10 +6,15 @@ description:
 '''
 # TODO: Add from_zarr function to cloudvolume
 
+import time
+
 import numpy as np
 import zarr
-import time
+
+import dask
 from cloudvolume import CloudVolume
+from dask.distributed import Client, progress
+
 
 def generate_from_npy(array, vol_path, **kwargs):
     '''
@@ -58,3 +63,21 @@ def generate_from_zarr(zarr_path, vol_path, layer_type='segmentation',
                     slice(k, min(k + zarr_data.chunks[2], zarr_data.shape[2]))
                 )
                 vol[chunk] = zarr_data[chunk]
+
+def transfer_with_dask_distributed(zarr_data, vol):
+    tasks = []
+    def process_chunk(chunk_slices, zarr_data, vol):
+        chunk = zarr_data[chunk_slices]
+        vol[chunk_slices] = chunk
+    for i in range(0, zarr_data.shape[0], zarr_data.chunks[0]):
+        for j in range(0, zarr_data.shape[1], zarr_data.chunks[1]):
+            for k in range(0, zarr_data.shape[2], zarr_data.chunks[2]):
+                chunk_slices = (
+                    slice(i, min(i + zarr_data.chunks[0], zarr_data.shape[0])),
+                    slice(j, min(j + zarr_data.chunks[1], zarr_data.shape[1])),
+                    slice(k, min(k + zarr_data.chunks[2], zarr_data.shape[2]))
+                )
+                task = dask.delayed(process_chunk)(chunk_slices, zarr_data, vol)
+                tasks.append(task)
+    # Trigger the computation with Dask
+    dask.compute(*tasks, scheduler="distributed")
