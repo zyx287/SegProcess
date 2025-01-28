@@ -126,6 +126,39 @@ def load_and_write_chunk(slices, toml_path, output_zarr_path, mag_size, downsamp
     output_zarr[tuple(downsampled_slices)] = chunk_data
     print(f"Processed chunk with offset {volume_offset} and size {volume_size}, written to {downsampled_slices}")
 
+def parse_error_log(error_log_path):
+    '''
+    Process the error log to get the failed chunks
+    '''
+    failed_chunks = []
+    with open(error_log_path, 'r') as log_file:
+        for line in log_file:
+            if "Failed to load segment" in line or "Error processing chunk" in line:
+                match = re.search(r"\[slice\((\d+), (\d+), None\), slice\((\d+), (\d+), None\), slice\((\d+), (\d+), None\)\]", line)
+                if match:
+                    slices = [
+                        slice(int(match.group(1)), int(match.group(2))),
+                        slice(int(match.group(3)), int(match.group(4))),
+                        slice(int(match.group(5)), int(match.group(6)))
+                    ]
+                    failed_chunks.append(slices)
+    return failed_chunks
+
+
+def retry_failed_chunks(error_log_path, toml_path, output_zarr_path, mag_size):
+    '''
+    Make sure every chunk is processed
+    #TODO: Multiprocessing
+    '''
+    failed_chunks = parse_error_log(error_log_path)
+    output_zarr = zarr.open(output_zarr_path, mode="a")
+
+    for slices in failed_chunks:
+        try:
+            load_and_write_chunk(slices, toml_path, output_zarr_path, mag_size, output_zarr.shape)
+        except Exception as e:
+            print(f"Failed to retry chunk {slices}: {e}")
+
 def worker(task_queue, toml_path, output_zarr_path, mag_size, downsampled_size):
     """
     Worker function to process tasks from the queue.
@@ -214,3 +247,6 @@ if __name__ == "__main__":
         mag_size=mag_size,
         num_workers=10  # Adjust based on system
     )
+    # # Error process
+    # error_log_path = "/home/zhangy8@hhmi.org/data1/20250124_segmentation_download/outlog_20250125_v2.log"
+    # retry_failed_chunks(error_log_path, toml_path, output_zarr_path, mag_size)
