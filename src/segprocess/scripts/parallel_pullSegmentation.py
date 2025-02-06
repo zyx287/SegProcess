@@ -234,6 +234,7 @@ def process_volume_with_precomputed_slices(toml_path, output_zarr_path, total_vo
 
 if __name__ == "__main__":
     toml_path = '/home/zhangy8@hhmi.org/Desktop/2024-08-20 yzhang eviepha9wuinai6EiVujor8Vee2ge8ei.auth.k.toml'
+    # For mito (toml_path = '/home/zhangy8@hhmi.org/Desktop/mitos.streaming.k.toml')
     output_zarr_path = "/media/zhangy8/2e9acc20-4fb5-4d17-9e23-9f2ed36f8bf2/SegmentaionData/source/segmentation_data_mag2_20250124.zarr"
     total_volume_size = (27491, 15255, 12548)
     chunk_size = (2048, 2048, 2048)  # Adjust based on memory limit
