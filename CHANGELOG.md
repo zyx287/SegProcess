@@ -20,3 +20,5 @@
 ## [0.2.1] - Building
 ### Added
   Merge subcellular segmentation into cell segmentation (nuclei script)
+### Fixed
+  Adding logging and modify functions for efficiency and robustness
