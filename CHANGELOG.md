@@ -20,5 +20,7 @@
 ## [0.2.1] - Building
 ### Added
   Merge subcellular segmentation into cell segmentation (nuclei script)
+  View zarr dataset using Neuroglancer [2025/03/01]
+  Update multiprocess framework and scripts for 16nm segmentation (>2 TB) [2025/03/01]
 ### Fixed
   Adding logging and modify functions for efficiency and robustness
