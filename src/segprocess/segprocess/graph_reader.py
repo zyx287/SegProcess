@@ -197,7 +197,7 @@ class SegGraph():
         logger.info(f"Applied {operation_num} operations to the base graph. Encountered {errors} errors.")
         # TODO: Figure out required return value?
     
-    def extract_connected_components(self, start_vertex_supervoxel_id: int)-> int:
+    def extract_connected_components(self, start_vertex_supervoxel_id: int) -> set[int]:
         '''
         Extract all connected components of the given supervoxel from the base graph
         (Works for generating merge list of a specific neuron)
@@ -227,6 +227,26 @@ class SegGraph():
 
         logger.info(f"Found {len(visited_vertices_segid)} connected supervoxels")
         
+        return visited_vertices_segid
+    
+    # TODO: Test function for large graph
+    def extract_connected_components_large_graph(self, start_vertex_supervoxel_id: int) -> set[int]:
+        if start_vertex_supervoxel_id not in self.seg_id_to_vertex:
+            raise ValueError(f"Supervoxel {start_vertex_supervoxel_id} not found in the base graph")
+        
+        # Use graph-tool's built-in label_components for better performance
+        comp, hist = gt.label_components(self.base_graph, start=self.seg_id_to_vertex[start_vertex_supervoxel_id])
+        
+        # Extract the component that contains our start vertex
+        start_comp = comp[self.seg_id_to_vertex[start_vertex_supervoxel_id]]
+        visited_vertices_segid = set()
+        
+        # Collect all vertices in this component
+        for v in self.base_graph.vertices():
+            if comp[v] == start_comp:
+                visited_vertices_segid.add(self.vertex_to_segid[int(v)])
+        
+        logger.info(f"Found {len(visited_vertices_segid)} connected supervoxels")
         return visited_vertices_segid
     
     def generate_supervoxel_label_dirc(self, transform_flag=True):
@@ -304,7 +324,7 @@ class SegGraph():
             logger.error(f"Failed to save graph: {e}")
             return False
         
-   def get_graph_statistics(self) -> Dict[str, Union[int, float]]:
+    def get_graph_statistics(self) -> Dict[str, Union[int, float]]:
         '''
         Get statistics about the graph
         
@@ -333,3 +353,28 @@ class SegGraph():
                 if v_int in self.vertex_to_segid:
                     isolated.append(self.vertex_to_segid[v_int])
         return isolated
+    
+    # TODO: Test functions below
+    ###### Integrating Knossos_utils
+    def update_graph_with_mergelist(self, mergelist_content: str) -> None:
+        '''
+        Update the graph according to a mergelist instead of change log.
+        
+        Args:
+            mergelist_content: Content of a mergelist file
+        '''
+        from knossos_utils import mergelist_tools
+        
+        # Create a mapping of supervoxel IDs to vertices
+        supervoxel_to_vertex = {seg_id: self.seg_id_to_vertex[seg_id] 
+                                for seg_id in self.seg_id_to_vertex}
+        
+        # Parse the mergelist and apply changes
+        subobject_map = mergelist_tools.subobject_map_from_mergelist(mergelist_content)
+        
+        # Apply the changes to the graph
+        for subobj_id, obj_id in subobject_map.items():
+            if subobj_id in self.seg_id_to_vertex and obj_id in self.seg_id_to_vertex:
+                # Add edge between the subobject and object
+                self.base_graph.add_edge(self.seg_id_to_vertex[subobj_id], 
+                                        self.seg_id_to_vertex[obj_id])
