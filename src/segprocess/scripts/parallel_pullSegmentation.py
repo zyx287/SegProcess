@@ -108,6 +108,7 @@ def load_and_write_chunk(slices, toml_path, output_zarr_path, mag_size, downsamp
     # Avoid ariadne timeout
     session = create_retry_session()
     try:
+        # Offset sequence: XYZ, output order: ZYX
         chunk_data = kdataset.load_seg(offset=tuple(volume_offset), size=tuple(volume_size), mag=mag_size)
     except requests.exceptions.RequestException as e:
         print(f"Failed to load segment: {e}")
