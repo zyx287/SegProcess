@@ -151,8 +151,8 @@ class ProofDataset():
             return load_knossos_dataset(
                 toml_path=toml_file_path,
                 volume_offset=coord,
-                volume_size=(32, 32, 32),
-                mag_size=5
+                volume_size=(4, 4, 4),
+                mag_size=2
             )[0][0][0]
         
         coords = self.processed_df['Mapped_Coordinates'].dropna().tolist()
