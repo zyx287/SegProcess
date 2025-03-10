@@ -238,7 +238,7 @@ if __name__ == "__main__":
     parser.add_argument("--array", help="Path to a specific array within the zarr dataset")
     parser.add_argument("--voxel-size", help="Comma-separated voxel sizes (e.g., '1,1,1')")
     parser.add_argument("--bind-address", default="127.0.0.1", help="Address to bind the neuroglancer server to")
-    parser.add_argument("--bind-port", type=int, default=0, help="Port to bind the neuroglancer server to")
+    parser.add_argument("--bind-port", type=int, default=8080, help="Port to bind the neuroglancer server to")
     
     args = parser.parse_args()
     
