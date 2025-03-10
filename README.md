@@ -85,6 +85,14 @@ python parallel.py > output.log &
 ```
 We tested the function on Linux Workstation, processed a 600 GB segmentation.
 
+
+### Visualize local/cloud data using Neuroglancer
+#### Use scripts
+Path: visualization/start_neuroglancer.py
+```bash
+python start_neuroglancer.py <path to zarr dataset > <--bind-port int>
+```
+
 <!-- ## Notebook Details
 The included Jupyter Notebook provides a step-by-step guide for:
 1. Loading and filtering Ariadne proofreading data.
