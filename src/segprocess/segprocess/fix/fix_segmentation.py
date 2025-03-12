@@ -495,7 +495,7 @@ if __name__ = '__main__':
     # Create a toy model
     mask = np.zeros((30, 30, 30), dtype=np.uint8)
 
-    corrected, stats = fix_merged_segments_3d_with_erosion(
+    corrected, stats_v1 = fix_merged_segments_3d_with_erosion(
         mask,
         erosion_iterations=1,
         connectivity=3,
@@ -503,11 +503,20 @@ if __name__ = '__main__':
     )
 
 
-    water_corrected, stats = advanced_false_merger_detection(
+    water_corrected, stats_v2 = fix_merged_segments_3d_with_watershed(
         mask,
         min_object_size=100,  # Adjust based on your data
         validation_metrics=True,
         h_min=3,  # Higher means fewer splits
         smoothing=1  # Smoothing helps reduce noise-induced splits
     )
+
+    water_corrected_v2, stats_v3 = fix_merged_segments_3d_with_watershed_elongation(
+        mask,
+        min_object_size=100,  # Adjust based on your data
+        validation_metrics=True,
+        h_min=3,  # Higher means fewer splits
+        smoothing=1  # Smoothing helps reduce noise-induced splits
+    )
+
     compare_3d_segmentations(mask, water_corrected, slice_indices=[13, 15, 17, 19, 21])
