@@ -11,16 +11,24 @@ import numpy as np
 def compute_processing_slices(total_volume_size, processing_chunk_size):
     '''
     Precompute slices for processing chunks in the volume.
-    
-    Args:
+
+    Parms:
         total_volume_size: tuple
-            The total size of the volume (z, y, x).
+            The total size of the volume (x, y, z).
         processing_chunk_size: tuple
-            The size of each processing chunk (z, y, x).
-            
+            The size of each processing chunk (x, y, z).
+    
     Returns:
-        list of tuple
-            A list of slices for each processing chunk.
+        slices_list: list
+            List of tuples, each: (chunk_indices, slices)
+            chunk_indices: tuple
+                Indices of the current chunk in the total volume.
+                e.g. (0, 0, 0)
+            slices: list of slice objects
+                Slices for the current chunk in each dimension.
+                e.g. slice(0, 1024, None), slice(0, 1024, None), slice(0, 1024, None)
+    Usage:
+        slices_list = compute_processing_slices(total_volume_size, processing_chunk_size)
     '''
     slices_list = []
     
