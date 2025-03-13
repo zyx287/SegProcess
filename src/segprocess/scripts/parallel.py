@@ -187,7 +187,7 @@ def calculate_bounding_box_for_chunk(task, zarr_path, cell_labels_set, discoveri
     return result, index, chunk_indices
 
 def worker_bounding_box(tasks, zarr_path, cell_labels_set, discovering_labels, result_queue):
-    """
+    '''
     Worker function for multiprocessing bounding box calculation.
     
     Parameters:
@@ -201,7 +201,7 @@ def worker_bounding_box(tasks, zarr_path, cell_labels_set, discovering_labels, r
             Whether to discover new labels during processing.
         result_queue: Queue
             Queue to store results.
-    """
+    '''
     for task in tasks:
         result, task_id, chunk_indices = calculate_bounding_box_for_chunk(task, zarr_path, cell_labels_set, discovering_labels)
         result_queue.put((result, task_id, chunk_indices))
