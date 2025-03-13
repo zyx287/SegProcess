@@ -24,5 +24,7 @@
   Update multiprocess framework and scripts for 16nm segmentation (>2 TB) [2025/03/01]
   Update converter for large zarr in scripts [2025/03/08]
   Multiprocess wrapper for general usage
+    For IO functions (segprocess.multiprocess.multiprocess_wrapper_IO) and non-IO functions (segprocess.multiprocess.multiprocess_wrapper_noIO) [2025/03/12]
+  Mitochondria analysis scripts [2025/03/12]
 ### Fixed
   Adding logging and modify functions for efficiency and robustness

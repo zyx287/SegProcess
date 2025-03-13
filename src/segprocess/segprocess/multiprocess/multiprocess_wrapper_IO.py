@@ -27,7 +27,7 @@ logging.basicConfig(
     ]
 )
 
-def process_with_io(func):
+def process_zarr_with_io(func):
     """
     Decorator that transforms a function that processes a single chunk with I/O operations
     into a function that processes a whole dataset using multiprocessing.
@@ -302,7 +302,7 @@ if __name__ == "__main__":
     filtered_zarr_path = "/media/zhangy8/ca0155b9-932b-4491-8ea9-d40a586475cf/SegmentationData/CellShape/S1/cellshape_s1_filtered_20250305_xyz_new.zarr"
     
     # Example application for cell segmentation
-    @process_with_io
+    @process_zarr_with_io
     def process_segment_chunk(chunk_info, input_zarr_path, output_paths, 
                             lookup_table, valid_labels_set):
         """
