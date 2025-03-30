@@ -118,6 +118,7 @@ def process_zarr_dynamically(input_zarr_path, output_zarr_path, filtered_zarr_pa
 def calculate_bounding_box_for_chunk(task, zarr_path, cell_labels_set, discovering_labels):
     '''
     Calculate partial bounding box information for a single chunk.
+    Another possible way to go should be estimating the bounding box based on cell meshes
     
     Parms:
         task: tuple
