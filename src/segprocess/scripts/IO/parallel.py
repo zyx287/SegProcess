@@ -119,6 +119,7 @@ def calculate_bounding_box_for_chunk(task, zarr_path, cell_labels_set, discoveri
     '''
     Calculate partial bounding box information for a single chunk.
     Another possible way to go should be estimating the bounding box based on cell meshes
+    There is a method built in igneous (the skeleton part, they used mesh to roughly get the boundary box)
     
     Parms:
         task: tuple
