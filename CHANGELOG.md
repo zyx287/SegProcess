@@ -17,7 +17,7 @@
   Read and write zarr data from npy segmentation (relative slow)
   Multi-process computation for convert and filter zarr segmentation (Low memory required)
 
-## [0.2.1] - Building
+## [0.2.1] - 2025-04-06
 ### Added
   Merge subcellular segmentation into cell segmentation (nuclei script)
   View zarr dataset using Neuroglancer [2025/03/01]
