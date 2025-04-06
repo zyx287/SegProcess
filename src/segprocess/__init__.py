@@ -2,7 +2,7 @@
 SegProcess: Processing tools for large-scale electron microscopy segmentation data.
 """
 
-__version__ = "0.2.1"
+__version__ = "0.3.0"
 
 # Import key functionality for package-level access
 from .core.dataset import ProofDataset, SegmentationData

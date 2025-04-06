@@ -7,7 +7,7 @@ from setuptools import setup, find_packages
 if __name__ == "__main__":
     setup(
         name='segprocess',
-        version='0.2.1',
+        version='0.3.0',
         description='Process dense labeled oversegmentation data',
         author='zyx',
         author_email='yuxiang.jeffrey.zhang@gmail.com',
