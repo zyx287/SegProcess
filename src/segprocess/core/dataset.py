@@ -374,7 +374,9 @@ class ProofDataset:
                 except Exception as e:
                     logger.error(f"Error processing coordinate {coord}: {e}")
 
-        self.processed_df['target_id'] = pd.Series(target_list, dtype='int64')
+        self.processed_df['target_id'] = pd.Series(
+            [target if target is not None else -1 for target in target_list], dtype='int64'
+        )
         
         # Map seg IDs to labels
         try:
