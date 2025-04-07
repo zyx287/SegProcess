@@ -75,9 +75,14 @@ proof_table = ProofDataset(file_path)
 # Filter cells with "QA is completed" status
 proof_table.filter_excel_ariadne([
     'zone 1', 'zone 2', 'zone 3', 
-    'Bergmann-Glia', 'Purkinje cells', 'ClimbingFiber'
+    'Bergmann-Glia', 'Purkinje-Cells', 'Climbing-Fiber'
 ])
+
+# Check filtered dataset (pandas)
+proof_table.processed_df
 ```
+
+PS: Check the **warning info**!
 
 #### Processing Segmentation Graph
 

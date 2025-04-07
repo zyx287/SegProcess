@@ -343,7 +343,7 @@ class ProofDataset:
         # Map coordinates
         self.processed_df['Mapped_Coordinates'] = self.processed_df['Coordinate'].apply(self._map_coordinates)
 
-        def process_coordinate(coord: Tuple[int, int, int]) -> Optional[int]:
+        def process_coordinate(coord: Tuple[int, int, int]) -> int:
             """Process a single coordinate and return segmentation ID"""
             try:
                 seg_array = load_knossos_dataset(
@@ -374,7 +374,7 @@ class ProofDataset:
                 except Exception as e:
                     logger.error(f"Error processing coordinate {coord}: {e}")
 
-        self.processed_df['target_id'] = target_list
+        self.processed_df['target_id'] = pd.Series(target_list, dtype='int64')
         
         # Map seg IDs to labels
         try:
@@ -382,7 +382,7 @@ class ProofDataset:
                 lookup_data = pickle.load(f)
                 
             self.processed_df['label'] = self.processed_df['target_id'].apply(
-                lambda seg_id: int(float(lookup_data.get(seg_id, -1))) if seg_id is not None else -1
+                lambda seg_id: int(lookup_data.get(seg_id, -1)) if seg_id is not None else -1
             )
             
             logger.info(f"Segmentation ID and label generated for {len(coords)} neurons using {num_threads} threads.")
