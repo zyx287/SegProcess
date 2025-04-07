@@ -15,10 +15,14 @@ from .distributed import (
     create_dask_array_from_zarr,
     write_dask_array_to_zarr
 )
+from .parallel import (
+    process_zarr_dynamically
+)
 
 __all__ = [
     'process_large_zarr',
     'process_zarr_with_io',
+    'process_zarr_dynamically',
     'MultiprocessingFramework',
     'Task',
     'measure_time',
