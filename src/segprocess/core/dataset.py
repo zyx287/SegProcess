@@ -345,17 +345,20 @@ class ProofDataset:
 
         def process_coordinate(coord: Tuple[int, int, int]) -> int:
             """Process a single coordinate and return segmentation ID"""
-            try:
-                seg_array = load_knossos_dataset(
+            max_retries = 3# Avoid HTTP errors
+            for attempt in range(max_retries):
+                try:
+                    seg_array = load_knossos_dataset(
                     toml_path=toml_file_path,
                     volume_offset=coord,
                     volume_size=volume_size,
                     mag_size=mag_size
-                )
-                return seg_array[0][0][0]
-            except Exception as e:
-                logger.error(f"Error processing coordinate {coord}: {e}")
-                return None
+                    )
+                    return seg_array[0][0][0]
+                except Exception as e:
+                    logger.error(f"Error processing coordinate {coord} on attempt {attempt + 1}: {e}")
+                    if attempt == max_retries - 1:
+                        return None
         
         # Get coordinates and process in parallel
         coords = self.processed_df['Mapped_Coordinates'].dropna().tolist()
